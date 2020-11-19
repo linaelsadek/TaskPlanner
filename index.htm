@@ -1,0 +1,644 @@
+<!DOCTYPE html>
+<html>	     
+	<head>
+		<title>Assignment 3</title>
+        <meta charset="UTF-8">
+        <!-- Load React. -->
+        <!-- Note: when deploying, replace "development.js" with "production.min.js". -->
+        <script src="https://unpkg.com/react@16/umd/react.development.js" crossorigin></script>
+        <script src="https://unpkg.com/react-dom@16/umd/react-dom.development.js" crossorigin></script>	
+        <script src="https://unpkg.com/babel-standalone@6/babel.min.js"></script>
+
+        <!-- Latest compiled and minified CSS -->
+        <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.4.1/css/bootstrap.min.css">
+        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
+        <link rel="stylesheet" href="css/style.css">
+        <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+        <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.4.1/js/bootstrap.min.js"></script>
+    
+	</head>
+	<body>
+        <div>
+            <div id="root"></div>
+        </div>       
+
+        <script type="text/babel">
+            
+            //This class will display an initial form that would allow us to
+            //show the correct view for each type of user
+            class App extends React.Component
+            {
+                constructor(props)
+                {
+                    super(props);
+                    this.state = {
+                        employeeName:"",
+                        employeeType:0,
+                        showList:false
+                    }
+                }
+
+                render()
+                {
+                    var toRender;
+                    
+                    //This will render the view based on the user selection
+                    if (this.state.showList == true)
+                        toRender = <Category employeeType={this.state.employeeType} />
+                    else //This will show the initial form
+                    {
+                        toRender = <div className="frmStyle">                        
+                            <div className="row">
+                                <div className="col-md-3"></div>
+                                <div className="col-md-6">
+                                    <h3 className="text-center">Please help us give you a customized experience by filling the form below..</h3>
+                                    <form className="initForm">
+                                        <div className="form-group">
+                                            <label htmlFor="employeeName">Full Name</label>
+                                            <input type="text" className="form-control" id="employeeName" placeholder="Name" />
+                                        </div>
+                                        <div className="form-group">
+                                            <label htmlFor="employeeType">What type of employee are you?</label>
+                                            <select id="employeeType" className="form-control" onChange={(e) => this.changeSelection(e)}>
+                                                <option value="0" >Employee</option>
+                                                <option value="1" >Manager/Supervisor</option>
+                                            </select>
+                                        </div>
+                                        <button type="submit" className="btn btn-primary" onClick={this.submitForm.bind(this)}>Submit</button>
+
+                                    </form>
+                                </div>
+                                <div className="col-md-3"></div>                          
+                            </div>
+                        </div>
+
+                    }
+
+
+                    return toRender;
+
+                }
+
+                changeSelection(e)
+                {
+                    var select = e.target;
+                    var value = select.options[select.selectedIndex].getAttribute("value");
+                    var nextState = this.state;
+                    
+                    nextState.employeeType = parseInt(value, 10);
+                    this.setState(nextState);
+                }
+
+                submitForm()
+                {
+                    var nextState = this.state;
+                    nextState.showList = true;
+                    this.setState(nextState);
+
+                }
+            }
+            
+            
+            //This class will be the category class. It will store all the categories created by the user
+            class Category extends React.Component
+            {
+                constructor(props)
+                {
+                    super(props);
+                    this.state = {
+                        employeeType : 0,
+                        categories:[],
+                        nextId:0
+                    }
+                }
+
+                render()
+                {
+                    var toRender;
+                    
+                    if (this.props.employeeType == 0)
+                        toRender = this.state.categories.map(
+                                            ({catId}) => <div key={catId} className="catSection">
+                                                            <button onClick={this.deleteCategory.bind(this, catId)} title="Delete Category" className="del">
+                                                                <i className="fa fa-times"></i>
+                                                            </button> 
+                                                            <CreateListEmployee sectionId={catId} />
+                                                         </div>                                        
+                                        )   ;
+                    else
+                        toRender = this.state.categories.map(
+                                            ({catId}) => <div key={catId} className="catSection">
+                                                            <button onClick={this.deleteCategory.bind(this, catId)} title="Delete Category" className="del">
+                                                                <i className="fa fa-times"></i>
+                                                            </button>                                
+                                                            <CreateListAdmin sectionId={catId} />
+                                                        </div>                                        
+                                        )   ;
+
+                    return <div>
+                        <h1 className="text-center">Welcome to your task organizer!</h1>
+                        <div className="row">
+                            <div className="col-md-1"></div>
+                            <div className="col-md-11">
+                                <button onClick={this.createCategory.bind(this)} className="btn btn-primary">Create a new Category</button>
+                                <br/><br/>
+                                <div className="row">
+                                    <div className="col-md-1"></div>
+                                    <div className="col-md-10">                                      
+                                        {toRender}                                       
+                                    </div>
+                                    <div className="col-md-1"></div>                                    
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                }
+
+                
+
+                createCategory()
+                {
+                    this.setState({
+                        categories:[...this.state.categories, {catId:this.state.nextId}],
+                        nextId: this.state.nextId + 1                    
+                    })
+                }
+
+                deleteCategory(Id)
+                {
+                    var nextState = this.state;
+                    nextState.categories = nextState.categories.filter(({catId}) => (catId != Id));
+                    this.setState(nextState);
+                }
+            }
+
+
+            //This class represents the admin/managerial view
+            class CreateListAdmin extends React.Component
+            {
+                constructor(props){
+                    super(props);
+                    this.addRow = this.addRow.bind(this);
+                    this.state = {
+                        sectionId:0,
+                        categoryName:"",
+                        rows:[
+                            {id:0, task:"", priority:"", dueDate:"", description:""}
+                        ],
+                        nextRowId:1,
+                        sortCol:'',
+                        prevSortCol: '',
+                        sortDirection: 'ASC'
+                    }
+                }
+                
+                render() { 
+                    
+                    var colId = 1;
+                    var colNum = 1;
+                    var section = "taskOrganizer-" + this.props.sectionId;
+                    var heading = "heading-"+ this.props.sectionId;
+                    var accordionId = "accordion-" + this.props.sectionId;
+                    
+                    //{table}
+                    //btn btn-default btn-block
+                    //btn btn-link
+                    return <div id={accordionId} className="accordion new-cateogory-section">
+                        <div className="card">
+                            <div id={heading} className="card-header row">
+                                
+                                <div className="flex col-md-12">
+                                    <button className="btn btn-default btn-chevron" type="button" data-toggle="collapse" data-target={"#"+section} role="button" aria-expanded="true" aria-controls={section}>
+                                        <i className="fa"></i>
+                                        
+                                        
+                                    </button>
+                                    <input type="text" className="form-control special-input" placeholder="New category" onChange={this.setCategoryName.bind(this)}/>
+                                </div>
+                            </div>                            
+                        </div>
+                        <div id={section} className="collapse in" aria-labelledby={heading} data-parent={"#"+accordionId}>
+                            <div className="card-body">
+                            <table className="table table-hover table-condensed">
+                                <thead>
+                                    <tr>
+                                        <td>
+                                            <button id={"btnTaskSort"+accordionId} type="button" className="btn btn-link" onClick={this.sortByTask.bind(this)}>
+                                                Task
+                                            </button>
+                                        </td>
+                                        <td>
+                                            <button id={"btnPrioritySort"+accordionId} type="button" className="btn btn-link" onClick={this.sortByPriority.bind(this)}>
+                                                Priority
+                                            </button>
+                                        </td>
+                                        <td><i className="fa fa-calendar"> 
+                                            <button id={"btnDueDateSort"+accordionId} type="button" className="btn btn-link" onClick={this.sortByDueDate.bind(this)}>
+                                                Due Date
+                                            </button>
+                                        </i></td>
+                                        <td>
+                                            <button id={"btnDescriptionSort"+accordionId} type="button" className="btn btn-link" onClick={this.sortByDescription.bind(this)}>
+                                                Description
+                                            </button>
+                                        </td>
+                                        <td></td>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {this.state.rows.map(
+                                        ({id}) =>
+                                        <tr id={id} key={id}>
+                                            <td id={colId+colNum} key={colId+colNum}>
+                                                <input type="text" className="form-control" onChange={(e) => this.taskNameChange(id, e)}/>
+                                            </td>
+                                            <td id={colId+(colNum+1)} key={colId+(colNum+1)}>
+                                                <select className="form-control" onChange={(e) => this.changeSelection(id, e)}>
+                                                    <option value="Default" >Select a Priority</option>
+                                                    <option value="Low" className="lowPriority">Low</option>
+                                                    <option value="Medium" className="mediumPriority">Medium</option>
+                                                    <option value="High" className="highPriority">High</option>
+                                                    <option value="Critical" className="criticalPriority">Critical</option>
+                                                </select>
+                                            </td>
+                                            <td id={colId+(colNum+2)} key={colId+(colNum+2)}>
+                                                <input name="date" type="text" className="form-control" placeholder="MM/DD/YYYY" onChange={(e) => this.dueDateChange(id, e)}/>
+                                            </td>
+                                            <td id={colId+(colNum+3)} key={colId+(colNum+3)}>
+                                                <input  type="text" className="form-control" onChange={(e) => this.descriptionChange(id, e)}/>                                                
+                                            </td>
+                                            <td id={colId+(colNum+4)} key={colId+(colNum+4)}>
+                                                <button onClick={this.deleteRow.bind(this, id)} className="btn btn-danger"> Delete</button> 
+                                            </td>
+                                        </tr>
+                                    )}    
+                                </tbody>
+                            </table>
+                            <button id="addRowBtn" onClick={this.addRow.bind(this)} className="btn btn-info"> Add task </button>
+                            </div>
+                        </div>
+                    </div>
+                }
+
+                addRow(){
+                    this.setState({
+                        rows:[...this.state.rows, {id:this.state.nextRowId, task:"", priority:"", dueDate:"", description:""}],
+                        nextRowId: this.state.nextRowId + 1                    
+                    })
+                }
+
+                deleteRow(rowId)
+                {
+                    this.setState({
+                        rows:this.state.rows.filter(({id}) => id != rowId)                  
+                    })
+                }
+
+                setCategoryName(e)
+                {
+                    var inputText = e.target.value;
+                    var nextState = this.state;
+
+                    nextState.categoryName = inputText;
+                    this.setState(nextState);
+                }
+
+                changeSelection(rowId, e)
+                {                   
+                    var select = e.target;
+                    var priority = select.options[select.selectedIndex].getAttribute("value");
+                    var nextState = this.state.rows;                   
+
+                    if (priority == "Low")
+                        e.currentTarget.className = "form-control lowPriority"; 
+                    else if (priority == "Medium")
+                        e.currentTarget.className = "form-control mediumPriority"; 
+                    else if (priority == "High")
+                        e.currentTarget.className = "form-control highPriority"; 
+                    else if (priority == "Critical")
+                        e.currentTarget.className = "form-control criticalPriority"; 
+                    else
+                        e.currentTarget.className = "form-control";  
+                    
+                    
+                    nextState[rowId].priority = priority;
+                    this.setState(nextState);
+                    
+                }
+
+                taskNameChange(rowId, e)
+                {
+                    var inputText = e.target.value;
+                    var nextState = this.state.rows;
+
+                    nextState[rowId].task = inputText;
+                    this.setState(nextState);
+                }
+
+                dueDateChange(rowId, e)
+                {
+                    var inputText = e.target.value;
+                    var nextState = this.state.rows;
+
+                    nextState[rowId].task = inputText;
+                    this.setState(nextState);
+                }
+
+                descriptionChange(rowId, e)
+                {
+                    var inputText = e.target.value;
+                    var nextState = this.state.rows;
+
+                    nextState[rowId].task = inputText;
+                    this.setState(nextState);
+                }
+
+                sortByTask(e)
+                {                   
+                    var nextState = this.state;
+                    var sortDirection = nextState.sortDirection;
+                    
+                    nextState.prevSortCol = nextState.sortCol;
+                    nextState.sortCol = e.target.id;
+
+                    if (nextState.prevSortCol != "")
+                        document.getElementById(nextState.prevSortCol).className = "btn btn-link";
+                    
+                    //invert the sorting direction
+                    if (sortDirection == "ASC")
+                    {
+                        e.target.className = "btn btn-link fa fa-sort-down";
+                        sortDirection = "DESC";
+                    }                        
+                    else
+                    {
+                        e.target.className = "btn btn-link fa fa-sort-up";
+                        sortDirection = "ASC";
+                    }
+                        
+                    
+                    if (sortDirection == "ASC")
+                        nextState.rows = nextState.rows.sort((a,b) => a.task.toLowerCase() > b.task.toLowerCase() ? 1:-1);
+                    else
+                        nextState.rows = nextState.rows.sort((a,b) => b.task.toLowerCase() > a.task.toLowerCase() ? 1:-1);
+
+                    nextState.sortDirection = sortDirection;
+                    this.setState(nextState);
+                }
+
+                sortByPriority(e)
+                {                   
+                    var nextState = this.state;
+                    var sortDirection = nextState.sortDirection;
+                    
+                    nextState.prevSortCol = nextState.sortCol;
+                    nextState.sortCol = e.target.id;
+
+                    if (nextState.prevSortCol != "")
+                        document.getElementById(nextState.prevSortCol).className = "btn btn-link";
+                    
+                    //invert the sorting direction
+                    if (sortDirection == "ASC")
+                    {
+                        e.target.className = "btn btn-link fa fa-sort-down";
+                        sortDirection = "DESC";
+                    }                        
+                    else
+                    {
+                        e.target.className = "btn btn-link fa fa-sort-up";
+                        sortDirection = "ASC";
+                    }
+                        
+                    
+                    if (sortDirection == "ASC")
+                        nextState.rows = nextState.rows.sort((a,b) => a.priority.toLowerCase() > b.priority.toLowerCase() ? 1:-1);
+                    else
+                        nextState.rows = nextState.rows.sort((a,b) => b.priority.toLowerCase() > a.priority.toLowerCase() ? 1:-1);
+
+                    nextState.sortDirection = sortDirection;
+                    this.setState(nextState);
+                }
+
+                sortByDueDate(e)
+                {                   
+                    var nextState = this.state;
+                    var sortDirection = nextState.sortDirection;
+                    
+                    nextState.prevSortCol = nextState.sortCol;
+                    nextState.sortCol = e.target.id;
+
+                    if (nextState.prevSortCol != "")
+                        document.getElementById(nextState.prevSortCol).className = "btn btn-link";
+                    
+                    //invert the sorting direction
+                    if (sortDirection == "ASC")
+                    {
+                        e.target.className = "btn btn-link fa fa-sort-down";
+                        sortDirection = "DESC";
+                    }                        
+                    else
+                    {
+                        e.target.className = "btn btn-link fa fa-sort-up";
+                        sortDirection = "ASC";
+                    }
+                        
+                    
+                    if (sortDirection == "ASC")
+                        nextState.rows = nextState.rows.sort((a,b) => a.dueDate.toLowerCase() > b.dueDate.toLowerCase() ? 1:-1);
+                    else
+                        nextState.rows = nextState.rows.sort((a,b) => b.dueDate.toLowerCase() > a.dueDate.toLowerCase() ? 1:-1);
+
+                    nextState.sortDirection = sortDirection;
+                    this.setState(nextState);
+                }
+            
+                sortByDescription(e)
+                {                   
+                    var nextState = this.state;
+                    var sortDirection = nextState.sortDirection;
+                    
+                    nextState.prevSortCol = nextState.sortCol;
+                    nextState.sortCol = e.target.id;
+
+                    if (nextState.prevSortCol != "")
+                        document.getElementById(nextState.prevSortCol).className = "btn btn-link";
+                    
+                    //invert the sorting direction
+                    if (sortDirection == "ASC")
+                    {
+                        e.target.className = "btn btn-link fa fa-sort-down";
+                        sortDirection = "DESC";
+                    }                        
+                    else
+                    {
+                        e.target.className = "btn btn-link fa fa-sort-up";
+                        sortDirection = "ASC";
+                    }
+                        
+                    
+                    if (sortDirection == "ASC")
+                        nextState.rows = nextState.rows.sort((a,b) => a.description.toLowerCase() > b.description.toLowerCase() ? 1:-1);
+                    else
+                        nextState.rows = nextState.rows.sort((a,b) => b.description.toLowerCase() > a.description.toLowerCase() ? 1:-1);
+
+                    nextState.sortDirection = sortDirection;
+                    this.setState(nextState);
+                }
+            }
+            
+            //This class represents the employee view
+            class CreateListEmployee extends React.Component
+            {
+                constructor(props){
+                    super(props);
+                    this.addRow = this.addRow.bind(this);
+                    this.state = {
+                        sectionId:0,
+                        categoryName:"",
+                        rows:[
+                            {id:0, task:""}
+                        ],
+                        nextRowId:1,
+                        sortCol:'',
+                        prevSortCol: '',
+                        sortDirection: 'ASC'
+                    }
+                }
+                
+                render() { 
+                    
+                    var colId = 1;
+                    var colNum = 1;
+                    var section = "taskOrganizer-" + this.props.sectionId;
+                    var heading = "heading-"+ this.props.sectionId;
+                    var accordionId = "accordion-" + this.props.sectionId;
+                    
+                    //{table}
+                    //btn btn-default btn-block
+                    //btn btn-link
+                    return <div id={accordionId} className="accordion new-cateogory-section">
+                        <div className="card">
+                            <div id={heading} className="card-header row">
+                                
+                                <div className="flex col-md-12">
+                                    <button className="btn btn-default btn-chevron" type="button" data-toggle="collapse" data-target={"#"+section} role="button" aria-expanded="true" aria-controls={section}>
+                                        <i className="fa"></i>
+                                        
+                                        
+                                    </button>
+                                    <input type="text" className="form-control special-input" placeholder="New category" onChange={this.setCategoryName.bind(this)}/>
+                                </div>
+                            </div>                            
+                        </div>
+                        <div id={section} className="collapse in" aria-labelledby={heading} data-parent={"#"+accordionId}>
+                            <div className="card-body">
+                            <table className="table table-hover table-condensed">
+                                <thead>
+                                    <tr>
+                                        <td>
+                                            <button id={"btnTaskSort"+accordionId} type="button" className="btn btn-link" onClick={this.sortByTask.bind(this)}>
+                                                Task
+                                            </button>
+                                        </td>
+                                        <td></td>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {this.state.rows.map(
+                                        ({id}) =>
+                                        <tr id={id} key={id}>
+                                            <td id={colId+colNum} key={colId+colNum}>
+                                                <input type="text" className="form-control" onChange={(e) => this.taskNameChange(id, e)}/>
+                                            </td>                                            
+                                            <td id={colId+(colNum+1)} key={colId+(colNum+1)}>
+                                                <button onClick={this.deleteRow.bind(this, id)} className="btn btn-danger"> Delete</button> 
+                                            </td>
+                                        </tr>
+                                    )}    
+                                </tbody>
+                            </table>
+                            <button id="addRowBtn" onClick={this.addRow.bind(this)} className="btn btn-info"> Add task </button>
+                            </div>
+                        </div>
+                    </div>
+                }
+
+                addRow(){
+                    this.setState({
+                        rows:[...this.state.rows, {id:this.state.nextRowId}],
+                        nextRowId: this.state.nextRowId + 1                    
+                    })
+                }
+
+                deleteRow(rowId)
+                {
+                    this.setState({
+                        rows:this.state.rows.filter(({id}) => id != rowId)                  
+                    })
+                }
+
+                setCategoryName(e)
+                {
+                    var inputText = e.target.value;
+                    var nextState = this.state;
+
+                    nextState.categoryName = inputText;
+                    this.setState(nextState);
+                }
+                
+                taskNameChange(rowId, e)
+                {
+                    var inputText = e.target.value;
+                    var nextState = this.state.rows;
+
+                    nextState[rowId].task = inputText;
+                    this.setState(nextState);
+                }               
+
+                sortByTask(e)
+                {                   
+                    var nextState = this.state;
+                    var sortDirection = nextState.sortDirection;
+                    
+                    nextState.prevSortCol = nextState.sortCol;
+                    nextState.sortCol = e.target.id;
+
+                    if (nextState.prevSortCol != "")
+                        document.getElementById(nextState.prevSortCol).className = "btn btn-link";
+                    
+                    //invert the sorting direction
+                    if (sortDirection == "ASC")
+                    {
+                        e.target.className = "btn btn-link fa fa-sort-down";
+                        sortDirection = "DESC";
+                    }                        
+                    else
+                    {
+                        e.target.className = "btn btn-link fa fa-sort-up";
+                        sortDirection = "ASC";
+                    }
+                        
+                    
+                    if (sortDirection == "ASC")
+                        nextState.rows = nextState.rows.sort((a,b) => a.task.toLowerCase() > b.task.toLowerCase() ? 1:-1);
+                    else
+                        nextState.rows = nextState.rows.sort((a,b) => b.task.toLowerCase() > a.task.toLowerCase() ? 1:-1);
+
+                    nextState.sortDirection = sortDirection;
+                    this.setState(nextState);
+                }
+
+            }
+            
+            
+            
+            ReactDOM.render(
+                <div>
+                <App />
+                </div>,
+                document.getElementById('root')
+            );
+    
+        </script>
+	</body>
+</html>
